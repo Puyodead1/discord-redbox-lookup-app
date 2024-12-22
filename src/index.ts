@@ -131,6 +131,9 @@ app.post("/interactions", async (req, res) => {
                 title: `Store ${storeId}`,
                 color: 0xc6162c,
                 fields,
+                footer: {
+                    text: "Created by Puyodead1",
+                },
             };
 
             let payloadData = {
