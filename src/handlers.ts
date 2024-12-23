@@ -240,7 +240,7 @@ export const handleProductLookup = async (data: any, token: string, db: Database
 };
 
 export const handleSearch = async (data: any, token: string, db: Database) => {
-    if (!data.options.length) {
+    if (!data.options || !data.options.length) {
         await FollowUpMessage(token, {
             content: "No options provided",
         });
