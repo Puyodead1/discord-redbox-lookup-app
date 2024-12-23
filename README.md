@@ -1,22 +1,6 @@
-# User-Installable app for Discord
+# Redbox Utils Discord App
 
-This project contains a basic example of a game integration for Discord written in JavaScript, built for the [Developing a User-Installable App tutorial](http://discord.com/developers/docs/tutorials/developing-a-user-installable-app).
-
-
-## Project structure
-Below is a basic overview of the project structure:
-
-```
-├── .env.sample -> sample .env file
-├── app.js      -> main entrypoint for the app
-├── commands.js -> slash command payloads + helpers
-├── game.js     -> logic specific to the fake game
-├── utils.js    -> utility functions and enums
-|-- package-lock.json
-├── package.json
-├── README.md
-└── .gitignore
-```
+Contains features for looking up a store by id, searching for products by id or name, and soon barcode lookup
 
 ## Running app locally
 
@@ -29,32 +13,29 @@ Before you start, you'll need to install [NodeJS](https://nodejs.org/en/download
 Click on the **Installation** page in your app's settings and go to the **Default Install Settings** section.
 
 For user install:
-- `applications.commands`
+
+-   `applications.commands`
 
 For guild install:
-- `applications.commands`
-- `bot` (with Send Messages enabled)
 
-### Privileged Gateway Intents
-
-This sample app uses a privilege intent to create a fake leaderboard. In production, you probably wouldn't need this.
-
-Click on the **Bot** page in your app's settings and go to the **Privileged Gateway Intents** section.
-
-Toggle **Server Members Intent**.
+-   `applications.commands`
+-   `bot` (with Send Messages enabled)
 
 ### Setup project
 
 First clone the project:
+
 ```
 git clone https://github.com/discord/user-install-example.git
 ```
 
 Then navigate to its directory and install dependencies:
+
 ```
-cd user-install-example
-npm install
+cd discord-redbox-lookup-app
+pnpm install
 ```
+
 ### Get app credentials
 
 Fetch the credentials from your app's settings and add them to a `.env` file (see `.env.sample` for an example). You'll need your app ID (`APP_ID`), bot token (`DISCORD_TOKEN`), and public key (`PUBLIC_KEY`).
@@ -65,10 +46,8 @@ Fetching credentials is covered in detail in the [tutorial](http://discord.com/d
 
 ### Install slash commands
 
-The commands for the example app are set up in `commands.js`. All of the commands in the `ALL_COMMANDS` array at the bottom of `commands.js` will be installed when you run the `register` command configured in `package.json`:
-
 ```
-npm run register
+pnpm run register
 ```
 
 ### Run the app
@@ -76,10 +55,8 @@ npm run register
 After your credentials are added, go ahead and run the app:
 
 ```
-node app.js
+pnpm start
 ```
-
-> ⚙️ A package [like `nodemon`](https://github.com/remy/nodemon), which watches for local changes and restarts your app, may be helpful while locally developing.
 
 ### Set up interactivity
 
@@ -110,8 +87,6 @@ On the **General Information** tab, there will be an **Interactions Endpoint URL
 
 Click **Save Changes**, and your app should be ready to run 🚀
 
-## Other resources
-- Read **[the documentation](https://discord.com/developers/docs/intro)** for in-depth information about API features.
-- Browse the `examples/` folder in this project for smaller, feature-specific code examples
-- Join the **[Discord Developers server](https://discord.gg/discord-developers)** to ask questions about the API, attend events hosted by the Discord API team, and interact with other devs.
-- Check out **[community resources](https://discord.com/developers/docs/topics/community-resources#community-resources)** for language-specific tools maintained by community members.
+## Database File
+
+The database file is too large to be in Git, you can download it here: https://pixeldrain.com/u/kuaeiux7

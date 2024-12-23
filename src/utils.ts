@@ -16,27 +16,29 @@ export function VerifyDiscordRequest(clientKey: string) {
     };
 }
 
-export async function DiscordRequest(endpoint: string, options: Record<string, any> = {}) {
-    // append endpoint to root API URL
+export async function DiscordRequest(endpoint: string, body: any, isForm = false, method = "POST") {
     const url = "https://discord.com/api/v10/" + endpoint;
-    // Stringify payloads
-    if (options.body) options.body = JSON.stringify(options.body);
+
+    const additionalHeaders = isForm
+        ? undefined
+        : {
+              "Content-Type": "application/json",
+          };
     const res = await fetch(url, {
         headers: {
-            Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
-            "Content-Type": "application/json; charset=UTF-8",
-            "User-Agent": "DiscordBot (https://github.com/discord/discord-example-app, 1.0.0)",
+            ...additionalHeaders,
         },
-        ...options,
+        method: method,
+        body: isForm ? body : JSON.stringify(body),
     });
-    // throw API errors
+
     if (!res.ok) {
         const data = await res.json();
-        console.log(res.status);
-        throw new Error(JSON.stringify(data));
+        console.error("Response Error:", data);
+        throw new Error(`Discord API error: ${data.message} (code ${data.code})`);
     }
-    // return original response
-    return res;
+
+    return res.json();
 }
 
 export async function InstallGlobalCommands(appId: string, commands: any[]) {
@@ -45,7 +47,7 @@ export async function InstallGlobalCommands(appId: string, commands: any[]) {
 
     try {
         // This is calling the bulk overwrite endpoint: https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-global-application-commands
-        await DiscordRequest(endpoint, { method: "PUT", body: commands });
+        await DiscordRequest(endpoint, commands, false, "PUT");
     } catch (err) {
         console.error(err);
     }
@@ -55,12 +57,11 @@ export function capitalize(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// create follow up message
-export async function FollowUpMessage(token: string, data: Record<string, any>) {
+export async function FollowUpMessage(token: string, data: any, isForm = false) {
     const endpoint = `webhooks/${process.env.APP_ID}/${token}`;
     try {
-        await DiscordRequest(endpoint, { method: "POST", body: data });
+        await DiscordRequest(endpoint, data, isForm, "POST");
     } catch (err) {
-        console.error(err);
+        console.error("Error in FollowUpMessage:", err);
     }
 }
