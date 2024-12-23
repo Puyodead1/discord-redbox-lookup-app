@@ -26,6 +26,7 @@ export async function DiscordRequest(endpoint: string, body: any, isForm = false
           };
     const res = await fetch(url, {
         headers: {
+            Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
             ...additionalHeaders,
         },
         method: method,
