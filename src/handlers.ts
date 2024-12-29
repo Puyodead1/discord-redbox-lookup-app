@@ -157,6 +157,13 @@ export const handleProductLookup = async (data: any, token: string, db: Database
 
         const matches = searchItems(productName, db);
         product = matches[0];
+    } else if (optionName === "barcode") {
+        searchType = "Barcode";
+        const barcode = option.value.toString();
+        query = barcode;
+        const pid = db.prepare("SELECT * FROM Barcodes WHERE Barcode = ?").get(barcode) as any;
+        if (!pid) return await FollowUpMessage(token, { content: `Barcode '${barcode}' not found` });
+        product = db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(pid.ProductId) as any;
     }
 
     if (!product) {
@@ -271,15 +278,10 @@ export const handleSearch = async (data: any, token: string, db: Database) => {
         return;
     }
 
-    if (option.name === "product_id" || option.name === "product_name") {
+    if (option.name === "product_id" || option.name === "product_name" || option.name === "barcode") {
         await handleProductLookup(data, token, db);
         return;
     }
-
-    // if (option.name === "barcode") {
-    //     await handleBarcodeLookup(data, token, db);
-    //     return;
-    // }
 
     await FollowUpMessage(token, {
         content: "Unknown Command",

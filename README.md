@@ -1,6 +1,6 @@
 # Redbox Utils Discord App
 
-Contains features for looking up a store by id, searching for products by id or name, and soon barcode lookup
+Contains features for looking up a store by id, searching for products by id or name, and barcode lookup
 
 ## Running app locally
 
@@ -89,4 +89,4 @@ Click **Save Changes**, and your app should be ready to run 🚀
 
 ## Database File
 
-The database file is too large to be in Git, you can download it here: https://pixeldrain.com/u/kuaeiux7
+The database file is too large to be in Git, you can download it from the [rbnextcloud](https://rbnextcloud.mooo.com/s/Ft9ZxWaAP7jxnmL/download?path=%2FData&files=bot_database.7z)

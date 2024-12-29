@@ -36,12 +36,12 @@ const SEARCH_COMMAND = {
             type: 10,
             required: false,
         },
-        // {
-        //     name: "barcode",
-        //     description: "The barcode to search for",
-        //     type: 10,
-        //     required: false,
-        // },
+        {
+            name: "barcode",
+            description: "The barcode to search for",
+            type: 10,
+            required: false,
+        },
         {
             name: "product_name",
             description: "The product name to search for",
