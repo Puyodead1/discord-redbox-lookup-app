@@ -122,6 +122,21 @@ export const handleStoreLookup = async (data: any, token: string, db: Database) 
     return;
 };
 
+function searchItems(query: string, db: Database) {
+    const exactMatchStmt = db.prepare("SELECT * FROM ProductCatalog WHERE LongName = ?");
+    const partialMatchStmt = db.prepare("SELECT * FROM ProductCatalog WHERE LongName LIKE '%' || ? || '%'");
+
+    const exactMatches = exactMatchStmt.all(query);
+
+    if (exactMatches.length > 0) {
+        return exactMatches;
+    }
+
+    const partialMatches = partialMatchStmt.all(query);
+
+    return partialMatches;
+}
+
 export const handleProductLookup = async (data: any, token: string, db: Database) => {
     const option = data.options[0];
     const optionName = option.name;
@@ -138,7 +153,10 @@ export const handleProductLookup = async (data: any, token: string, db: Database
         searchType = "Name";
         const productName = option.value.toString();
         query = productName;
-        product = db.prepare("SELECT * FROM ProductCatalog WHERE LongName LIKE ?").get(`%${productName}%`) as any;
+        // product = db.prepare("SELECT * FROM ProductCatalog WHERE LongName LIKE ?").get(`%${productName}%`) as any;
+
+        const matches = searchItems(productName, db);
+        product = matches[0];
     }
 
     if (!product) {
