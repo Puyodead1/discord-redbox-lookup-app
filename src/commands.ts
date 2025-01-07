@@ -1,22 +1,6 @@
 import "dotenv/config";
 import { InstallGlobalCommands } from "./utils";
 
-const STORE_LOOKUP_OLD = {
-    name: "lookup",
-    type: 1,
-    description: "Lookup a store by its ID",
-    integration_types: [0, 1],
-    contexts: [0, 1, 2],
-    options: [
-        {
-            name: "store_id",
-            description: "The store ID to lookup",
-            type: 10,
-            required: true,
-        },
-    ],
-};
-
 const SEARCH_COMMAND = {
     name: "search",
     description: "Search the database",
@@ -91,7 +75,7 @@ const SEARCH_COMMAND = {
     ],
 };
 
-const ALL_COMMANDS = [STORE_LOOKUP_OLD, SEARCH_COMMAND];
+const ALL_COMMANDS = [SEARCH_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID!, ALL_COMMANDS)
     .then(() => console.log("Commands installed"))
