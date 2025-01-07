@@ -1,8 +1,8 @@
 import { Database } from "better-sqlite3";
-import { File, FormData } from "formdata-node";
 import { FollowUpMessage } from "./utils";
 
 export const parseDateString = (date: string) => date.toString().replace(/(\d{4})(\d{2})(\d{2})(\d{6})/, "$2/$3/$1");
+export const parseDateStringToYear = (date: string) => date.toString().substring(0, 4);
 
 export const handleStoreLookup = async (data: any, token: string, db: Database) => {
     const storeId = data.options[0].value.toString();
@@ -21,7 +21,7 @@ export const handleStoreLookup = async (data: any, token: string, db: Database) 
         console.log("Store not found, sending follow up");
         // follow up
         await FollowUpMessage(token, {
-            content: `Store with ID ${storeId} not found`,
+            data: { content: `Store with ID ${storeId} not found` },
         });
         return;
     }
@@ -118,7 +118,12 @@ export const handleStoreLookup = async (data: any, token: string, db: Database) 
     };
 
     console.log("Sending follow up", JSON.stringify(payloadData, null, 4));
-    await FollowUpMessage(token, payloadData);
+    await FollowUpMessage(token, {
+        data: {
+            content: `Store with ID ${storeId} found`,
+            embeds: [embed],
+        },
+    });
     return;
 };
 
@@ -140,38 +145,73 @@ function searchItems(query: string, db: Database) {
 export const handleProductLookup = async (data: any, token: string, db: Database) => {
     const option = data.options[0];
     const optionName = option.name;
-    let product;
+    let productMatches;
     let searchType;
     let query;
 
-    if (optionName === "product_id") {
+    if (optionName === "id") {
         searchType = "ID";
         const productId = option.value.toString();
         query = productId;
-        product = db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(productId) as any;
-    } else if (optionName === "product_name") {
+        const a = db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(productId) as any;
+        productMatches = [a];
+    } else if (optionName === "name") {
         searchType = "Name";
         const productName = option.value.toString();
         query = productName;
-        // product = db.prepare("SELECT * FROM ProductCatalog WHERE LongName LIKE ?").get(`%${productName}%`) as any;
+        productMatches = db
+            .prepare("SELECT * FROM ProductCatalog WHERE LongName LIKE '%' || ? || '%'")
+            .all(`%${productName}%`);
 
-        const matches = searchItems(productName, db);
-        product = matches[0];
+        // productMatches = searchItems(productName, db);
     } else if (optionName === "barcode") {
         searchType = "Barcode";
         const barcode = option.value.toString();
         query = barcode;
         const pid = db.prepare("SELECT * FROM Barcodes WHERE Barcode = ?").get(barcode) as any;
-        if (!pid) return await FollowUpMessage(token, { content: `Barcode '${barcode}' not found` });
-        product = db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(pid.ProductId) as any;
+        if (!pid)
+            return await FollowUpMessage(token, {
+                data: { content: `Barcode '${barcode}' not found` },
+            });
+        const a = db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(pid.ProductId) as any;
+        productMatches = [a];
     }
 
-    if (!product) {
+    if (!productMatches || !productMatches.length) {
         await FollowUpMessage(token, {
-            content: `Product with ${searchType} '${query}' not found`,
+            data: { content: `Product with ${searchType} '${query}' not found` },
         });
         return;
     }
+
+    if (productMatches.length > 1) {
+        if (productMatches.length > 5) {
+            await FollowUpMessage(token, {
+                data: { content: `Too many results for ${searchType} '${query}'` },
+            });
+            return;
+        }
+        const embed = {
+            title: `Multiple Products found for ${searchType} '${query}'`,
+            description: `Use the ID to select a specific product`,
+            color: 0xc6162c,
+            fields: productMatches.map((result: any) => {
+                const releaseDate = result.ReleaseDate ? parseDateString(result.ReleaseDate) : null;
+                const releaseDateStr = releaseDate ? `\nReleased: ${releaseDate}` : "";
+                return {
+                    name: `ID: ${result.Id}`,
+                    value: `${result.LongName}${releaseDateStr}`,
+                };
+            }),
+        };
+
+        await FollowUpMessage(token, {
+            data: { embeds: [embed] },
+        });
+        return;
+    }
+
+    const product = productMatches[0];
 
     const description = product.Description || "N/A";
     const imageFileName = product.ImageFile;
@@ -260,31 +300,60 @@ export const handleProductLookup = async (data: any, token: string, db: Database
     const file = new File([imageBuffer], imageFileName);
     formdata.set("file", file);
 
-    await FollowUpMessage(token, formdata, true);
+    // await FollowUpMessage(token, formdata, true);
+    await FollowUpMessage(
+        token,
+        {
+            data: {
+                embeds: [embed],
+                files: [file],
+            },
+        },
+        { isForm: true }
+    );
     return;
 };
 
 export const handleSearch = async (data: any, token: string, db: Database) => {
     if (!data.options || !data.options.length) {
         await FollowUpMessage(token, {
-            content: "No options provided",
+            data: { content: "No options provided" },
         });
         return;
     }
     const option = data.options[0];
 
-    if (option.name === "store_id") {
-        await handleStoreLookup(data, token, db);
-        return;
+    if (option.name === "store") {
+        const subOption = option.options[0];
+        if (subOption.name === "by-id") {
+            await handleStoreLookup(subOption, token, db);
+            return;
+        } else {
+            await FollowUpMessage(token, {
+                data: { content: "wtf, report this.. store search bad sub-option" },
+            });
+            return;
+        }
     }
 
-    if (option.name === "product_id" || option.name === "product_name" || option.name === "barcode") {
-        await handleProductLookup(data, token, db);
-        return;
+    if (option.name === "product") {
+        const subOption = option.options[0];
+        if (["by-name", "by-id", "by-barcode"].includes(subOption.name)) {
+            await handleProductLookup(subOption, token, db);
+            return;
+        } else {
+            await FollowUpMessage(token, {
+                data: { content: "wtf, report this.. product search bad sub-option" },
+            });
+            return;
+        }
     }
 
-    await FollowUpMessage(token, {
-        content: "Unknown Command",
-    });
+    // await FollowUpMessage(token, {
+    //     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    //     data: { content: "Unknown Command" },
+    // });
+    console.log(JSON.stringify(data, null, 4));
+    await FollowUpMessage(token, "Unknown Command");
     return;
 };

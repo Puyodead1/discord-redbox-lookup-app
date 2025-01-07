@@ -19,34 +19,74 @@ const STORE_LOOKUP_OLD = {
 
 const SEARCH_COMMAND = {
     name: "search",
-    type: 1,
-    description: "Search for a store or product",
-    integration_types: [0, 1],
-    contexts: [0, 1, 2],
+    description: "Search the database",
+    type: 1, // CHAT_INPUT
     options: [
         {
-            name: "store_id",
-            description: "The store ID to search for",
-            type: 10,
-            required: false,
+            name: "store",
+            description: "Search for stores",
+            type: 2, // SUB_COMMAND_GROUP
+            options: [
+                {
+                    name: "by-id",
+                    description: "Search store by ID",
+                    type: 1, // SUB_COMMAND
+                    options: [
+                        {
+                            name: "id",
+                            description: "Store ID",
+                            type: 3, // STRING
+                            required: true,
+                        },
+                    ],
+                },
+            ],
         },
         {
-            name: "product_id",
-            description: "The product ID to search for",
-            type: 10,
-            required: false,
-        },
-        {
-            name: "barcode",
-            description: "The barcode to search for",
-            type: 10,
-            required: false,
-        },
-        {
-            name: "product_name",
-            description: "The product name to search for",
-            type: 3,
-            required: false,
+            name: "product",
+            description: "Search for products",
+            type: 2, // SUB_COMMAND_GROUP
+            options: [
+                {
+                    name: "by-name",
+                    description: "Search product by name",
+                    type: 1,
+                    options: [
+                        {
+                            name: "name",
+                            description: "Product name",
+                            type: 3,
+                            required: true,
+                        },
+                    ],
+                },
+                {
+                    name: "by-id",
+                    description: "Search product by ID",
+                    type: 1,
+                    options: [
+                        {
+                            name: "id",
+                            description: "Product ID",
+                            type: 3,
+                            required: true,
+                        },
+                    ],
+                },
+                {
+                    name: "by-barcode",
+                    description: "Search product by barcode",
+                    type: 1,
+                    options: [
+                        {
+                            name: "barcode",
+                            description: "Product barcode",
+                            type: 3,
+                            required: true,
+                        },
+                    ],
+                },
+            ],
         },
     ],
 };

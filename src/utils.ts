@@ -16,53 +16,109 @@ export function VerifyDiscordRequest(clientKey: string) {
     };
 }
 
-export async function DiscordRequest(endpoint: string, body: any, isForm = false, method = "POST") {
+interface DiscordResponse {
+    data: {
+        content?: string;
+        components?: any[];
+        embeds?: any[];
+        files?: any[];
+    };
+}
+
+export async function DiscordRequest(
+    endpoint: string,
+    body: any,
+    options: {
+        isForm?: boolean;
+        method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+        requireJson?: boolean;
+    } = {}
+) {
+    const { isForm = false, method = "POST", requireJson = true } = options;
     const url = "https://discord.com/api/v10/" + endpoint;
 
-    const additionalHeaders = isForm
-        ? undefined
-        : {
-              "Content-Type": "application/json",
-          };
-    const res = await fetch(url, {
-        headers: {
-            Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
-            ...additionalHeaders,
-        },
-        method: method,
-        body: isForm ? body : JSON.stringify(body),
-    });
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
+                ...(isForm ? {} : { "Content-Type": "application/json" }),
+            },
+            body: isForm ? body : JSON.stringify(body),
+        });
 
-    if (!res.ok) {
-        const data = await res.json();
-        console.error("Response Error:", data);
-        throw new Error(`Discord API error: ${data.message} (code ${data.code})`);
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(`Discord API error: ${error.message} (code ${error.code})`);
+        }
+
+        return requireJson ? res.json() : res;
+    } catch (err) {
+        console.error(`Error in Discord request to ${endpoint}:`, err);
+        throw err;
+    }
+}
+
+export async function FollowUpMessage(
+    token: string,
+    content: string | DiscordResponse,
+    options: {
+        isForm?: boolean;
+        ephemeral?: boolean;
+    } = {}
+) {
+    const { isForm = false, ephemeral = false } = options;
+    const endpoint = `webhooks/${process.env.APP_ID}/${token}`;
+
+    if (isForm) {
+        const formData = new FormData();
+        const payload =
+            typeof content === "string"
+                ? { content }
+                : {
+                      ...content.data,
+                      ...(ephemeral && { flags: 64 }),
+                  };
+
+        formData.append("payload_json", JSON.stringify(payload));
+
+        if (content && typeof content !== "string" && content.data.files) {
+            content.data.files.forEach((file: any, index: number) => {
+                formData.append(`files[${index}]`, file);
+            });
+        }
+
+        return DiscordRequest(endpoint, formData, { isForm });
     }
 
-    return res.json();
+    const payload =
+        typeof content === "string"
+            ? { content }
+            : {
+                  ...content.data,
+                  ...(ephemeral && { flags: 64 }),
+              };
+
+    return DiscordRequest(endpoint, payload, { isForm });
+}
+
+export async function EditOriginalResponse(token: string, content: string | DiscordResponse) {
+    const endpoint = `webhooks/${process.env.APP_ID}/${token}/messages/@original`;
+    const payload = typeof content === "string" ? { content } : content.data;
+
+    return DiscordRequest(endpoint, payload, { method: "PATCH" });
+}
+
+export async function DeleteOriginalResponse(token: string) {
+    const endpoint = `webhooks/${process.env.APP_ID}/${token}/messages/@original`;
+    return DiscordRequest(endpoint, null, { method: "DELETE", requireJson: false });
 }
 
 export async function InstallGlobalCommands(appId: string, commands: any[]) {
-    // API endpoint to overwrite global commands
     const endpoint = `applications/${appId}/commands`;
-
-    try {
-        // This is calling the bulk overwrite endpoint: https://discord.com/developers/docs/interactions/application-commands#bulk-overwrite-global-application-commands
-        await DiscordRequest(endpoint, commands, false, "PUT");
-    } catch (err) {
-        console.error(err);
-    }
+    return DiscordRequest(endpoint, commands, { method: "PUT" });
 }
 
-export function capitalize(str: string) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-export async function FollowUpMessage(token: string, data: any, isForm = false) {
-    const endpoint = `webhooks/${process.env.APP_ID}/${token}`;
-    try {
-        await DiscordRequest(endpoint, data, isForm, "POST");
-    } catch (err) {
-        console.error("Error in FollowUpMessage:", err);
-    }
+export function capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
