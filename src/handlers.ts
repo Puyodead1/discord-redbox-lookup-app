@@ -185,7 +185,7 @@ export const handleProductLookup = async (data: any, token: string, db: Database
     }
 
     if (productMatches.length > 1) {
-        if (productMatches.length > 5) {
+        if (productMatches.length > 15) {
             await FollowUpMessage(token, {
                 data: { content: `Too many results for ${searchType} '${query}'` },
             });
