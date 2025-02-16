@@ -94,7 +94,7 @@ export default class extends BaseCommand {
 
     public handleStoreLookup = async (interaction: ChatInputCommandInteraction, client: BaseClient) => {
         const storeId = interaction.options.getInteger("id", true);
-        const store = client.db.prepare("SELECT * FROM Store WHERE Id = ?").get(storeId) as any;
+        const store = client.db.prepare("SELECT * FROM Store WHERE Id = ?").get(storeId.toString()) as any;
 
         // If the store doesn't exist, respond with an error message
         if (!store) {
