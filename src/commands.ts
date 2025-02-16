@@ -16,7 +16,7 @@ if (!process.env.CLIENT_ID) {
 const guildId = process.env.GUILD_ID;
 
 const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"));
+const commandFiles = fs.readdirSync(commandsPath).filter((f) => f.endsWith(".ts"));
 
 const commands = [];
 for (const file of commandFiles) {
