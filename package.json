@@ -27,7 +27,7 @@
         "typescript": "^5.7.2"
     },
     "pnpm": {
-        "ignoredBuiltDependencies": [
+        "onlyBuiltDependencies": [
             "better-sqlite3"
         ]
     }
