@@ -13,11 +13,7 @@ if (!process.env.CLIENT_ID) {
     console.error("No client id provided");
     process.exit(1);
 }
-
-if (!process.env.GUILD_ID) {
-    console.error("No guild id provided");
-    process.exit(1);
-}
+const guildId = process.env.GUILD_ID;
 
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"));
@@ -37,10 +33,17 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN as string);
     try {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-        const data = (await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID as string, process.env.GUILD_ID as string),
-            { body: commands }
-        )) as RESTPutAPIApplicationCommandsResult;
+        let data: RESTPutAPIApplicationCommandsResult;
+        if (guildId) {
+            data = (await rest.put(
+                Routes.applicationGuildCommands(process.env.CLIENT_ID as string, process.env.GUILD_ID as string),
+                { body: commands }
+            )) as RESTPutAPIApplicationCommandsResult;
+        } else {
+            data = (await rest.put(Routes.applicationCommands(process.env.CLIENT_ID as string), {
+                body: commands,
+            })) as RESTPutAPIApplicationCommandsResult;
+        }
 
         console.log(`Successfully reloaded ${data.length} application (/) commands.`);
     } catch (error) {
