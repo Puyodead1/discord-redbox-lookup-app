@@ -43,7 +43,7 @@ export default class extends BaseCommand {
                         // by-id
                         .addSubcommand((option) =>
                             option
-                                .addNumberOption((option) =>
+                                .addIntegerOption((option) =>
                                     option.setName("id").setDescription("Product ID").setRequired(true)
                                 )
                                 .setName("by-id")
@@ -66,7 +66,7 @@ export default class extends BaseCommand {
                         // by-id
                         .addSubcommand((option) =>
                             option
-                                .addNumberOption((option) =>
+                                .addIntegerOption((option) =>
                                     option.setName("id").setDescription("Store ID").setRequired(true)
                                 )
                                 .setName("by-id")
