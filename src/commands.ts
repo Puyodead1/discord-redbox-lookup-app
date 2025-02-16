@@ -1,82 +1,49 @@
+import { BaseClient, REST, RESTPutAPIApplicationCommandsResult, Routes } from "discord.js";
 import "dotenv/config";
-import { InstallGlobalCommands } from "./utils";
+import fs from "node:fs";
+import path from "node:path";
+import BaseCommand from "./lib/BaseCommand";
 
-const SEARCH_COMMAND = {
-    name: "search",
-    description: "Search the database",
-    type: 1, // CHAT_INPUT
-    options: [
-        {
-            name: "store",
-            description: "Search for stores",
-            type: 2, // SUB_COMMAND_GROUP
-            options: [
-                {
-                    name: "by-id",
-                    description: "Search store by ID",
-                    type: 1, // SUB_COMMAND
-                    options: [
-                        {
-                            name: "id",
-                            description: "Store ID",
-                            type: 3, // STRING
-                            required: true,
-                        },
-                    ],
-                },
-            ],
-        },
-        {
-            name: "product",
-            description: "Search for products",
-            type: 2, // SUB_COMMAND_GROUP
-            options: [
-                {
-                    name: "by-name",
-                    description: "Search product by name",
-                    type: 1,
-                    options: [
-                        {
-                            name: "name",
-                            description: "Product name",
-                            type: 3,
-                            required: true,
-                        },
-                    ],
-                },
-                {
-                    name: "by-id",
-                    description: "Search product by ID",
-                    type: 1,
-                    options: [
-                        {
-                            name: "id",
-                            description: "Product ID",
-                            type: 3,
-                            required: true,
-                        },
-                    ],
-                },
-                {
-                    name: "by-barcode",
-                    description: "Search product by barcode",
-                    type: 1,
-                    options: [
-                        {
-                            name: "barcode",
-                            description: "Product barcode",
-                            type: 3,
-                            required: true,
-                        },
-                    ],
-                },
-            ],
-        },
-    ],
-};
+if (!process.env.DISCORD_TOKEN) {
+    console.error("No token provided");
+    process.exit(1);
+}
 
-const ALL_COMMANDS = [SEARCH_COMMAND];
+if (!process.env.CLIENT_ID) {
+    console.error("No client id provided");
+    process.exit(1);
+}
 
-InstallGlobalCommands(process.env.APP_ID!, ALL_COMMANDS)
-    .then(() => console.log("Commands installed"))
-    .catch(console.error);
+if (!process.env.GUILD_ID) {
+    console.error("No guild id provided");
+    process.exit(1);
+}
+
+const commandsPath = path.join(__dirname, "commands");
+const commandFiles = fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"));
+
+const commands = [];
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command: new <T extends BaseCommand>(client: BaseClient) => T = require(filePath).default;
+    const cmdInstance = new command(null as any);
+
+    commands.push(cmdInstance.cmd.toJSON());
+}
+
+const rest = new REST().setToken(process.env.DISCORD_TOKEN as string);
+
+(async () => {
+    try {
+        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+
+        const data = (await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID as string, process.env.GUILD_ID as string),
+            { body: commands }
+        )) as RESTPutAPIApplicationCommandsResult;
+
+        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+    } catch (error) {
+        console.error(error);
+    }
+})();
