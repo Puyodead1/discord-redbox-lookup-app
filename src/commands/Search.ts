@@ -327,7 +327,7 @@ export default class extends BaseCommand {
         client: BaseClient
     ) => {
         let option: CommandInteractionOption<CacheType>;
-        let productMatches;
+        let productMatches: any[] = [];
         let searchType;
         let query;
 
@@ -345,7 +345,7 @@ export default class extends BaseCommand {
         if (option.name === "id") {
             searchType = "ID";
             const a = client.db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(query) as any;
-            productMatches = [a];
+            if (a) productMatches = [a];
         } else if (option.name === "name") {
             searchType = "Name";
             productMatches = client.db
@@ -361,7 +361,7 @@ export default class extends BaseCommand {
                     content: `Barcode '${query}' not found`,
                 });
             const a = client.db.prepare("SELECT * FROM ProductCatalog WHERE Id = ?").get(pid.ProductId) as any;
-            productMatches = [a];
+            if (a) productMatches = [a];
         }
 
         if (!productMatches || !productMatches.length) {
